@@ -16,26 +16,26 @@ import argparse
 import time
 import json
 
-def dump_message(mydict, ot_dict, day):
+def dump_message(f, mydict, ot_dict, day):
     idx_strs = [
         "3 hits left:",
         "2 hits left:",
         "1 hit left:",
         "0 hits left:"
     ]
-    print(f"# Day {day} logs:\n")
+    f.write(f"# Day {day} logs:\n\n")
     for i in range(3, -1, -1):
         if len(mydict[i]):
-            print(idx_strs[i])
+            f.write(f"{idx_strs[i]}\n")
             for idx,name in enumerate(mydict[i]):
                 ot_str = f" ({ot_dict[name]} OT left)" if ot_dict[name] > 0 else ""
-                print(f"{idx+1}. {name} {ot_str}")
-            print("")
+                f.write(f"{idx+1}. {name} {ot_str}\n")
+            f.write("\n")
     if len(mydict['excused']):
-        print("Excused:")
+        f.write("Excused:\n")
         for idx,name in enumerate(mydict['excused']):
-            print(f"{idx+1}. {name}")
-    print(f"Last updated: <t:{int(time.time())}:R>")
+            f.write(f"{idx+1}. {name}\n")
+    f.write(f"Last updated: <t:{int(time.time())}:R>\n")
 
 def print_csv(timedict):
     for name in timedict:
@@ -46,12 +46,13 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="template")
     parser.add_argument("arg", help="help message")
     parser.add_argument("-c", "--config", default="clan_config.json", help="help message")
+    parser.add_argument("-f", "--file", help="help message")
     parser.add_argument("-d", "--day", type=int, help="help message")
     parser.add_argument("-t", "--timedump", action="store_true", help="help message")
     
     args = parser.parse_args()
     
-    with open(args.config, "r") as f:
+    with open(args.config, "r", encoding="utf-8") as f:
         clanconfig = json.load(f)
         mapping = clanconfig['mapping']
         player_list = clanconfig['player_list']
@@ -109,7 +110,11 @@ def main(argv=None):
         mydict[idx].append(splitline[0])
         """
 
-    dump_message(mydict, ot_dict, args.day)
+    if args.file:
+        f = open(args.file, "w", encoding="utf-8")
+    else:
+        f = sys.stdout
+    dump_message(f, mydict, ot_dict, args.day)
 
     if args.timedump:
         print_csv(timedict)
